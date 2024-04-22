@@ -488,10 +488,18 @@ class OpenAIWrapper:
         """Prime the create_config with additional_kwargs."""
         # Validate the config
         prompt: Optional[str] = create_config.get("prompt")
+        model: Optional[ModelClient] = create_config.get("model")
         messages: Optional[List[Dict[str, Any]]] = create_config.get("messages")
+     
+        # Clean extra parameters to avoid 422 errors
+        if 'gpt-4' or 'gpt-3.5' not in model:
+            messages = [{key: val for key, val in msg.items() if key != 'name'} for msg in messages]
+            create_config['messages'] = messages
+               
         if (prompt is None) == (messages is None):
             raise ValueError("Either prompt or messages should be in create config but not both.")
         context = extra_kwargs.get("context")
+        
         if context is None:
             # No need to instantiate if no context is provided.
             return create_config
